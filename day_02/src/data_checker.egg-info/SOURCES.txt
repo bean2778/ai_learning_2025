@@ -1,0 +1,9 @@
+LICENSE
+README.md
+pyproject.toml
+src/data_checker/__init__.py
+src/data_checker/data_checker.py
+src/data_checker.egg-info/PKG-INFO
+src/data_checker.egg-info/SOURCES.txt
+src/data_checker.egg-info/dependency_links.txt
+src/data_checker.egg-info/top_level.txt
