@@ -14,7 +14,9 @@ try:
 except ImportError:
     logging.error("Missing numpy, pandas, or typing")
     sys.exit(1)
-    
+
+
+
 
 def check_data_quality(data: List[float]) -> Dict[str, Any]:
     """
@@ -29,41 +31,51 @@ def check_data_quality(data: List[float]) -> Dict[str, Any]:
     Returns:
         Dictionary containing quality metrics and flags
     """
-    # Your code here
-    clean_data = [x for x in data if not pd.isna(x)]
-    nonNums = [x for x in data if not isinstance(x, (int, float,np.number))]
-    clean_data = [x for x in clean_data if isinstance(x, (int, float, np.number))]
-    clean_data = [x for x in clean_data if not math.isnan(x)]
-
-
-    if not clean_data:  # Handle empty data
+    # Categorize all data in one pass for transparency
+    valid_data = []
+    excluded_non_numeric = []
+    excluded_nan_none = []
+    
+    for item in data:
+        if item is None or pd.isna(item):
+            excluded_nan_none.append(item)
+        elif not isinstance(item, (int, float, np.number)):
+            excluded_non_numeric.append(item)
+        else:
+            valid_data.append(item)
+    
+    if not valid_data:
         return {
             'data points': len(data),
             'valid data points': 0,
             'error': 'No valid data points to analyze',
-            'excluded data' : nonNums
+            'excluded_non_numeric': excluded_non_numeric,
+            'excluded_nan_none': excluded_nan_none
         }
     
     try:
-        print(clean_data)
+        logging.info(f"Processing {len(valid_data)} valid data points")
         analysis = {
             'data points': len(data),
-            'valid data points' : len(clean_data),
-            'std' : np.std(clean_data),
-            'mean' : np.mean(clean_data),
-            'min' : np.min(clean_data),
-            'max' : np.max(clean_data), 
-            'outliers' : find_outlier(clean_data),
-            'excluded data' : nonNums
+            'valid data points': len(valid_data),
+            'std': np.std(valid_data),
+            'mean': np.mean(valid_data),
+            'min': np.min(valid_data),
+            'max': np.max(valid_data),
+            'outliers': find_outlier(valid_data),
+            'excluded_non_numeric': excluded_non_numeric,
+            'excluded_nan_none': excluded_nan_none
         }
-    except TypeError:
-        logging.error("incompatible data in dataset")
+    except Exception as e:
+        logging.error(f"Error calculating statistics: {e}")
         return {
             'data points': len(data),
-            'valid data points': len(clean_data),
-            'error': 'Type error thrown. Check types in data set',
-            'excluded data' : nonNums
+            'valid data points': len(valid_data),
+            'error': f'Calculation error: {str(e)}',
+            'excluded_non_numeric': excluded_non_numeric,
+            'excluded_nan_none': excluded_nan_none
         }
+    
     return analysis
 
 def find_outlier(cdata: List[float]) -> List[float]:
@@ -81,6 +93,35 @@ def find_outlier(cdata: List[float]) -> List[float]:
     mean = np.mean(cdata)
     result = [x for x in cdata if (x < (mean - 2 * std)) or (x > (mean + 2 * std))]
     return result
+
+def analyze_csv_file(filepath):
+    """
+    Integration point: Read file, analyze, return report
+    This is the kind of workflow you'll have in real ML pipelines
+    """
+    
+    try:
+        # Step 1: Read file
+        df = pd.read_csv(filepath)
+        
+        # Step 2: Extract numeric column (assume first column)
+        data = pd.to_numeric(df.iloc[:, 0], errors='coerce').tolist()
+        
+        # Step 3: Analyze
+        result = check_data_quality(data)
+        
+        # Step 4: Add metadata
+        result['source_file'] = filepath
+        result['total_rows'] = len(df)
+        
+        return result
+        
+    except FileNotFoundError:
+        return {'error': f'File not found: {filepath}'}
+    except Exception as e:
+        return {'error': f'Failed to process file: {str(e)}'}   
+    
+
 
 def main():
     """Main function to test data quality checker."""
