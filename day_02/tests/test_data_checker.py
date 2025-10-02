@@ -4,7 +4,7 @@ import math
 import tempfile
 import os
 import numpy.testing as npt
-from data_checker import check_data_quality, analyze_csv_file
+from data_checker import check_data_quality, analyze_csv_file, check_categorical_quality
 from hypothesis import given, strategies as st
 
 # Group 1: basic calculations
@@ -181,3 +181,33 @@ def test_debug_what_happens():
         
     finally:
         os.unlink(temp_path)
+
+
+# categorical tests
+
+def test_basic_cat():
+    data = ['a', 'b', 'b', 'b', 'c', 'c']
+    result = check_categorical_quality(data)
+    assert result['unique count'] == 3
+    assert result['most common'] == 'b'
+    assert result['least common'] == 'a'
+    assert result['frequency distribution']['b'] == 3
+
+@pytest.mark.parametrize("data", [
+    ([1.3, 2.3, 3.4, 4.5, 5.7]),
+    ([None, None, None]),
+    ([]),
+], ids=["floats", "Nones", "empty"])
+def test_errors(data):
+    result = check_categorical_quality(data)
+    print(result)
+    assert result['error'] == 'no valid data points'
+
+def test_mixed_types_warning():
+    """Test that mixing types triggers appropriate warnings"""
+    data = [1, 2, 3, 'a', 'b']  # Mostly numbers
+    result = check_categorical_quality(data)
+    
+    assert 'warning' in result or 'warnings' in result
+    assert result['valid_categories'] == 5
+
