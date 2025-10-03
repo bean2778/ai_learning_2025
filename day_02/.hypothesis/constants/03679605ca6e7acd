@@ -1,4 +1,0 @@
-# file: C:\Users\bean2\ai_learning_2025\day_02\src\data_checker\data_checker.py
-# hypothesis_version: 6.140.2
-
-[0.1, 1.5, 946684800, '2024-01-01', '2024-01-02', '2024-01-03', '2024-01-05', '2024-01-06', '__main__', 'analysis', 'categorical', 'coerce', 'data points', 'detected frequency', 'diff', 'earliest', 'empty dataset', 'error', 'excluded_nan_none', 'excluded_non_numeric', 'gap_after_dates', 'gaps', 'gaps_detected', 'invalid values', 'invalid_type_count', 'irregular', 'latest', 'least common', 'max', 'mean', 'min', 'missing logging lib', 'missing_empty_string', 'missing_none', 'most common', 'no valid data', 'no valid data points', 'numerical', 'outliers', 'pattern', 'raise', 'repeated times', 's', 'source_file', 'std', 'temporal', 'total valid values', 'total values', 'total_rows', 'total_values', 'unique count', 'valid data points', 'valid_categories', 'warnings']

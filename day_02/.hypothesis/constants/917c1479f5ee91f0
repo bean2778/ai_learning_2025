@@ -1,4 +1,0 @@
-# file: C:\Users\bean2\ai_learning_2025\day_02\src\data_checker\data_checker.py
-# hypothesis_version: 6.140.2
-
-['__main__', 'a', 'b', 'c', 'coerce', 'data points', 'error', 'excluded_nan_none', 'excluded_non_numeric', 'least common', 'max', 'mean', 'min', 'missing logging lib', 'most common', 'outliers', 'source_file', 'std', 'total_rows', 'unique count', 'valid data points', 'value counts']
