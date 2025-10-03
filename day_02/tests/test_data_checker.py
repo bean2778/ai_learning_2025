@@ -4,7 +4,7 @@ import math
 import tempfile
 import os
 import numpy.testing as npt
-from data_checker import check_data_quality, analyze_csv_file, check_categorical_quality
+from data_checker import check_data_quality, analyze_csv_file, check_categorical_quality, check_temporal_quality, check_data
 from hypothesis import given, strategies as st
 
 # Group 1: basic calculations
@@ -211,3 +211,222 @@ def test_mixed_types_warning():
     assert 'warning' in result or 'warnings' in result
     assert result['valid_categories'] == 5
 
+# ============================================================================
+# Temporal Data Tests
+# ============================================================================
+
+def test_temporal_basic():
+    """Test basic temporal analysis with daily data"""
+    dates = [
+        '2024-01-01',
+        '2024-01-02', 
+        '2024-01-03',
+        '2024-01-05',  # Gap!
+        '2024-01-06'
+    ]
+    result = check_temporal_quality(dates)
+    
+    assert result['analysis'] == 'temporal'
+    assert result['total values'] == 5
+    assert result['total valid values'] == 5
+    assert result['earliest'] == pd.to_datetime('2024-01-01')
+    assert result['latest'] == pd.to_datetime('2024-01-06')
+    assert result['gaps_detected'] == 1
+
+
+def test_temporal_with_invalid_dates():
+    """Test temporal data with some invalid entries"""
+    dates = [
+        '2024-01-01',
+        'not-a-date',
+        '2024-01-03',
+        None,
+        '2024-01-04'
+    ]
+    result = check_temporal_quality(dates)
+    
+    assert result['analysis'] == 'temporal'
+    assert result['total values'] == 5
+    assert result['total valid values'] == 3
+    assert result['invalid values'] == 2
+
+
+def test_temporal_irregular_pattern():
+    """Test temporal data with irregular spacing (event data)"""
+    dates = [
+        '2024-01-01',
+        '2024-01-15',
+        '2024-03-20',
+        '2024-06-30'
+    ]
+    result = check_temporal_quality(dates)
+    
+    assert result['analysis'] == 'temporal'
+    assert result['pattern'] == 'irregular'
+    assert 'gaps' in result
+    assert result['gaps'] == 'N/A - no regular pattern'
+
+
+def test_temporal_hourly_data():
+    """Test temporal data with hourly frequency"""
+    dates = [
+        '2024-01-01 10:00:00',
+        '2024-01-01 11:00:00',
+        '2024-01-01 12:00:00',
+        '2024-01-01 14:00:00',  # Missing 13:00
+        '2024-01-01 15:00:00'
+    ]
+    result = check_temporal_quality(dates)
+    
+    assert result['analysis'] == 'temporal'
+    assert result['gaps_detected'] >= 1
+
+
+def test_temporal_no_gaps():
+    """Test temporal data with no gaps (perfect sequence)"""
+    dates = [
+        '2024-01-01',
+        '2024-01-02',
+        '2024-01-03',
+        '2024-01-04',
+        '2024-01-05'
+    ]
+    result = check_temporal_quality(dates)
+    
+    assert result['analysis'] == 'temporal'
+    assert result['gaps_detected'] == 0
+
+
+def test_temporal_all_invalid():
+    """Test temporal data with all invalid entries"""
+    dates = ['not-a-date', 'also-not-a-date', None, '']
+    result = check_temporal_quality(dates)
+    
+    assert 'error' in result
+    assert result['error'] == 'no valid data'
+
+
+def test_temporal_single_date():
+    """Test temporal data with single valid date"""
+    dates = ['2024-01-01']
+    result = check_temporal_quality(dates)
+    
+    assert result['analysis'] == 'temporal'
+    assert result['total valid values'] == 1
+    # Should handle gracefully (no gaps with only one date)
+
+
+# ============================================================================
+# Dispatcher Tests
+# ============================================================================
+
+def test_dispatcher_detects_numeric():
+    """Test dispatcher correctly routes numeric data"""
+    data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    result = check_data(data)
+    
+    assert result['analysis'] == 'numerical'
+    assert 'mean' in result
+    assert 'std' in result
+
+
+def test_dispatcher_detects_categorical():
+    """Test dispatcher correctly routes categorical data"""
+    data = ['red', 'blue', 'green', 'red', 'blue', 'red']
+    result = check_data(data)
+    
+    assert result['analysis'] == 'categorical'
+    assert 'unique count' in result
+    assert 'frequency distribution' in result
+
+
+def test_dispatcher_detects_temporal():
+    """Test dispatcher correctly routes temporal data"""
+    data = ['2024-01-01', '2024-01-02', '2024-01-03', '2024-01-04']
+    result = check_data(data)
+    
+    assert result['analysis'] == 'temporal'
+    assert 'earliest' in result
+    assert 'latest' in result
+
+
+def test_dispatcher_precedence_temporal_over_numeric():
+    """Test that temporal takes precedence over numeric when ambiguous"""
+    # Dates that could be parsed as numbers
+    data = ['2024-01-01', '2024-01-02', '2024-01-03']
+    result = check_data(data)
+    
+    assert result['analysis'] == 'temporal'
+
+
+def test_dispatcher_precedence_numeric_over_categorical():
+    """Test that numeric takes precedence over categorical when ambiguous"""
+    # Integers are valid for both numeric and categorical
+    data = [1, 2, 3, 4, 5, 6, 7, 8]
+    result = check_data(data)
+    
+    assert result['analysis'] == 'numerical'
+
+
+def test_dispatcher_mixed_with_nulls():
+    """Test dispatcher handles mixed data with many nulls"""
+    data = [1, 2, None, 3, None, 4, 5, None]
+    result = check_data(data)
+    
+    assert result['analysis'] == 'numerical'
+    assert 'mean' in result
+
+
+def test_dispatcher_small_dataset():
+    """Test dispatcher with very small dataset (< sample size)"""
+    data = [1, 2, 3]
+    result = check_data(data)
+    
+    # Should still work and check all elements
+    assert 'analysis' in result
+
+
+def test_dispatcher_large_dataset():
+    """Test dispatcher with large dataset (uses sampling)"""
+    data = list(range(1000))
+    result = check_data(data)
+    
+    assert result['analysis'] == 'numerical'
+    assert result['valid data points'] == 1000
+
+
+def test_dispatcher_empty_dataset():
+    """Test dispatcher handles empty list"""
+    data = []
+    result = check_data(data)
+    
+    assert 'error' in result
+    assert result['error'] == 'empty dataset'
+
+
+def test_dispatcher_all_none():
+    """Test dispatcher with all None values"""
+    data = [None, None, None, None]
+    result = check_data(data)
+    
+    # Should route somewhere and that analyzer should handle it
+    assert 'error' in result or 'data_type' in result
+
+
+def test_dispatcher_mixed_types_categorical():
+    """Test dispatcher routes mixed strings/numbers to categorical"""
+    data = ['apple', 'banana', 1, 2, 'cherry']
+    result = check_data(data)
+    
+    assert result['analysis'] == 'categorical'
+
+
+def test_dispatcher_yamane_sampling():
+    """Test that Yamane's formula produces reasonable sample sizes"""
+    # With 100 items and e=0.1, should get reasonable sample
+    data = list(range(100))
+    result = check_data(data)
+    
+    # Just verify it works and produces correct type
+    assert result['analysis'] == 'numerical'
+    assert result['valid data points'] == 100

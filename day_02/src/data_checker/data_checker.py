@@ -15,6 +15,133 @@ except ImportError:
     logging.error("Missing numpy, pandas, or typing")
     sys.exit(1)
 
+def check_data(data: List[Any]) -> Dict[str, Any]:
+    """
+    Automatically detect data type and route to appropriate analyzer.
+    
+    Uses Yamane's formula to determine sample size for type detection.
+    
+    Args:
+        data: List of values to analyze
+        
+    Returns:
+        Dictionary containing analysis results from appropriate analyzer
+    """
+    if not data or len(data) == 0:
+        return {'error': 'empty dataset'}
+    
+    # Yamane's formula: n = N / (1 + N * e^2)
+    # where N = population size, e = margin of error (0.1)
+    N = len(data)
+    e = 0.1
+    sample_size = int(N / (1 + N * (e ** 2)))
+    
+    # Determine sampling frequency
+    if N / sample_size < 2:
+        # Check everything
+        sample_indices = range(N)
+    else:
+        # Check every nth element
+        frequency = int(N / sample_size)
+        sample_indices = range(0, N, frequency)
+    
+    # Count valid items for each type
+    num_count = 0
+    temp_count = 0
+    cat_count = 0
+    
+    for i in sample_indices:
+        item = data[i]
+        
+        # Skip None/NaN for type detection
+        if item is None or (isinstance(item, float) and pd.isna(item)):
+            continue
+        
+        # Test if temporal (try parsing as datetime)
+        if isinstance(item, str):
+            # Strings: always test for date parsing
+            try:
+                pd.to_datetime([item], errors='raise')
+                temp_count += 1
+            except:
+                pass
+        elif isinstance(item, int) and item > 946684800:  # Jan 1, 2000 as Unix timestamp
+            # Large integers: might be Unix timestamps
+            try:
+                pd.to_datetime([item], unit='s', errors='raise')
+                temp_count += 1
+            except:
+                pass
+        
+        # Test if numeric
+        if isinstance(item, (int, float, np.number)) and not pd.isna(item):
+            num_count += 1
+        
+        # Test if categorical (string or valid int/float)
+        if isinstance(item, str) or isinstance(item, int):
+            cat_count += 1
+        elif isinstance(item, float) and not pd.isna(item) and item % 1 == 0:
+            cat_count += 1
+    
+    # Determine type (precedence: temporal > numeric > categorical)
+    if temp_count >= num_count and temp_count >= cat_count:
+        return check_temporal_quality(data)
+    elif num_count >= cat_count:
+        return check_data_quality(data)
+    else:
+        return check_categorical_quality(data)
+
+
+def check_temporal_quality(data: List[str]) -> Dict[str, Any]:
+    """
+    Perform checks on temporal data
+
+    
+    This function is designed with production ML pipelines in mind,
+    where data quality is crucial for model performance.
+
+    Args:
+        data: List of temporal values to check
+
+    Returns:
+        Dictionary containing temporal metrics and flags
+    """
+    series = pd.Series(data)
+    temp_series = pd.to_datetime(series, errors='coerce')
+    valid_series = temp_series.dropna()
+    if not len(valid_series):
+        return {'error' : 'no valid data'}
+    
+    analysis = {
+        'analysis': 'temporal',
+        'total values' : len(data),
+        'total valid values' : len(valid_series),
+        'invalid values' : len(data) - len(valid_series),
+        'earliest' : valid_series.min(),
+        'latest' : valid_series.max(),
+        'frequency/granularity' : valid_series.dt.freq,
+        'repeated times' : valid_series.value_counts().to_dict(),
+        'diff' : valid_series.diff().to_dict(),
+        'gaps_detected' : 0
+    }
+    time_deltas = valid_series.diff().dropna()
+
+    if time_deltas.nunique() == len(time_deltas):
+        analysis['pattern'] = 'irregular'
+        analysis['gaps'] = 'N/A - no regular pattern'
+    else:
+        most_common = time_deltas.mode()[0]
+        large_gaps = time_deltas[time_deltas > most_common * 1.5]
+        analysis['detected frequency'] = str(most_common)
+        if len(large_gaps) > 0:
+            # Report AFTER which dates gaps occur
+            gap_indices = time_deltas[time_deltas > most_common * 1.5].index
+            analysis['gap_after_dates'] = valid_series[gap_indices - 1].tolist()
+        analysis['gaps_detected'] = len(large_gaps)
+
+
+    analysis['repeated times'] = {key: value for key, value in analysis['repeated times'].items() if value > 1}
+    return analysis
 
 def check_categorical_quality(data: List[str]) -> Dict[str, Any]:
     """
@@ -62,11 +189,15 @@ def check_categorical_quality(data: List[str]) -> Dict[str, Any]:
     # cardinality,  most/least common, missing val count, distribution
 
     if not valid_data:
-        return { 'error': 'no valid data points' }
+        return { 
+                    'analysis' : 'categorical',
+                    'error': 'no valid data points' 
+                }
     series = pd.Series(valid_data)
 
 
     analysis = {
+        'analysis' : 'categorical',
         'total_values': len(data),
         'valid_categories': len(valid_data),
         'missing_none': none_count,
@@ -131,6 +262,7 @@ def check_data_quality(data: List[float]) -> Dict[str, Any]:
     try:
         logging.info(f"Processing {len(valid_data)} valid data points")
         analysis = {
+            'analysis': 'numerical',
             'data points': len(data),
             'valid data points': len(valid_data),
             'std': np.std(valid_data),
@@ -218,9 +350,15 @@ def main():
     #     print(f"\n🧪 Edge Case {i+1}: {case}")
     #     result = check_data_quality(case)
     #     print(result)
-
-    data = ['a', 'b', 'b', 'b', 'c', 'c']
-    result = check_categorical_quality(data)
+    dates = [
+        '2024-01-01',
+        '2024-01-02', 
+        '2024-01-03',
+        '2024-01-03',
+        '2024-01-05',  # Gap!
+        '2024-01-06'
+    ]
+    result = check_temporal_quality(dates)
     print(result)
         # Your test code here
         
