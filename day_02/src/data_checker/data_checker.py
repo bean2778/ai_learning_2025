@@ -326,7 +326,133 @@ def analyze_csv_file(filepath):
     except FileNotFoundError:
         return {'error': f'File not found: {filepath}'}
     except Exception as e:
-        return {'error': f'Failed to process file: {str(e)}'}   
+        return {'error': f'Failed to process file: {str(e)}'} 
+
+ def generate_report(analysis_results: Dict[str, Any]) -> str:
+    """
+    Generate a human-readable report from analysis results.
+    
+    Args:
+        analysis_results: Dictionary from any analyzer function
+        
+    Returns:
+        Formatted string report
+    """
+    # Handle error cases
+    if 'error' in analysis_results:
+        return f"Data Quality Report\n{'=' * 50}\nERROR: {analysis_results['error']}\n"
+    
+    data_type = analysis_results.get('data_type', 'unknown')
+    
+    report = []
+    report.append("Data Quality Report")
+    report.append("=" * 50)
+    report.append(f"Data Type: {data_type.upper()}")
+    report.append("")
+    
+    # Common fields across all types
+    if 'total values' in analysis_results or 'total_values' in analysis_results:
+        total = analysis_results.get('total values') or analysis_results.get('total_values')
+        report.append(f"Total Values: {total}")
+    
+    if 'valid data points' in analysis_results:
+        valid = analysis_results['valid data points']
+        report.append(f"Valid Data Points: {valid}")
+    elif 'valid_categories' in analysis_results:
+        valid = analysis_results['valid_categories']
+        report.append(f"Valid Categories: {valid}")
+    elif 'total valid values' in analysis_results:
+        valid = analysis_results['total valid values']
+        report.append(f"Valid Values: {valid}")
+    
+    report.append("")
+    
+    # Type-specific sections
+    if data_type == 'numeric':
+        report.append("Statistical Summary:")
+        report.append("-" * 30)
+        report.append(f"  Mean: {analysis_results.get('mean', 'N/A'):.2f}")
+        report.append(f"  Std Dev: {analysis_results.get('std', 'N/A'):.2f}")
+        report.append(f"  Min: {analysis_results.get('min', 'N/A'):.2f}")
+        report.append(f"  Max: {analysis_results.get('max', 'N/A'):.2f}")
+        
+        if 'outliers' in analysis_results and analysis_results['outliers']:
+            report.append("")
+            report.append(f"Outliers Detected: {len(analysis_results['outliers'])}")
+            report.append(f"  Values: {analysis_results['outliers']}")
+        else:
+            report.append("")
+            report.append("Outliers Detected: None")
+            
+    elif data_type == 'categorical':
+        report.append("Categorical Summary:")
+        report.append("-" * 30)
+        report.append(f"  Unique Categories: {analysis_results.get('unique count', 'N/A')}")
+        report.append(f"  Most Common: {analysis_results.get('most common', 'N/A')}")
+        report.append(f"  Least Common: {analysis_results.get('least common', 'N/A')}")
+        
+        if 'frequency distribution' in analysis_results:
+            report.append("")
+            report.append("Frequency Distribution:")
+            freq_dist = analysis_results['frequency distribution']
+            for category, count in sorted(freq_dist.items(), key=lambda x: x[1], reverse=True):
+                report.append(f"  {category}: {count}")
+                
+    elif data_type == 'temporal':
+        report.append("Temporal Summary:")
+        report.append("-" * 30)
+        report.append(f"  Earliest: {analysis_results.get('earliest', 'N/A')}")
+        report.append(f"  Latest: {analysis_results.get('latest', 'N/A')}")
+        
+        if 'detected_frequency' in analysis_results:
+            report.append(f"  Detected Frequency: {analysis_results['detected_frequency']}")
+            
+        if 'pattern' in analysis_results:
+            report.append(f"  Pattern: {analysis_results['pattern']}")
+            
+        if 'gaps_detected' in analysis_results:
+            gaps = analysis_results['gaps_detected']
+            report.append(f"  Gaps Detected: {gaps}")
+            
+            if gaps > 0 and 'gap_after_dates' in analysis_results:
+                report.append(f"  Gap Locations: {analysis_results['gap_after_dates']}")
+        elif 'gaps' in analysis_results:
+            report.append(f"  Gaps: {analysis_results['gaps']}")
+    
+    # Missing data section (common to all types)
+    report.append("")
+    report.append("Data Quality Issues:")
+    report.append("-" * 30)
+    
+    issues = []
+    if 'missing_none' in analysis_results and analysis_results['missing_none'] > 0:
+        issues.append(f"  None values: {analysis_results['missing_none']}")
+    if 'missing_empty_string' in analysis_results and analysis_results['missing_empty_string'] > 0:
+        issues.append(f"  Empty strings: {analysis_results['missing_empty_string']}")
+    if 'invalid_type_count' in analysis_results and analysis_results['invalid_type_count'] > 0:
+        issues.append(f"  Invalid types: {analysis_results['invalid_type_count']}")
+    if 'invalid values' in analysis_results and analysis_results['invalid values'] > 0:
+        issues.append(f"  Invalid values: {analysis_results['invalid values']}")
+    if 'excluded_non_numeric' in analysis_results and analysis_results['excluded_non_numeric']:
+        issues.append(f"  Non-numeric values: {analysis_results['excluded_non_numeric']}")
+        
+    if issues:
+        report.extend(issues)
+    else:
+        report.append("  No quality issues detected")
+    
+    # Warnings section
+    if 'warnings' in analysis_results and analysis_results['warnings']:
+        report.append("")
+        report.append("Warnings:")
+        report.append("-" * 30)
+        for warning in analysis_results['warnings']:
+            report.append(f"  ⚠ {warning}")
+    
+    report.append("")
+    report.append("=" * 50)
+    
+    return "\n".join(report) 
     
 
 

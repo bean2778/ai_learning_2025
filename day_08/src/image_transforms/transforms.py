@@ -20,6 +20,22 @@ def adjust_brightness(image: np.ndarray, factor: float) -> np.ndarray:
     brighened = image * factor
     return np.clip(brighened, 0, 255).astype(np.uint8)
 
+def crop_center(image: np.ndarray, crop_height: int, crop_width: int) -> np.ndarray:
+    crop_height = min(image.shape[0], crop_height)
+    crop_width = min(image.shape[1], crop_width)
+    r1 = (image.shape[0] - crop_height) // 2
+    c1 = (image.shape[1] - crop_height) // 2
+    cropped = image[r1:r1 + crop_height, c1:c1 + crop_width, :]
+    return cropped
+
+def add_border(image: np.ndarray, border_width: int, border_color: int = 0) -> np.ndarray:
+    return np.pad(image,
+                  pad_width=((border_width, border_width),  # height
+                             (border_width, border_width),  # width
+                             (0, 0)),                       # channels
+                  mode='constant',
+                  constant_values=border_color)
+
 def main():
     test_image = np.zeros((10, 10, 3), dtype=np.uint8)
     test_image[:, :5, 0] = 255  # Left half red
