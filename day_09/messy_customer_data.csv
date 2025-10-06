@@ -1,0 +1,13 @@
+customer_id,name,age,email,signup_date,purchase_amount,category,country
+1,John Doe,34,john@email.com,2024-01-15,156.50,electronics,USA
+2,Jane Smith,28,jane@email.com,2024-01-16,89.99,clothing,USA
+3,Bob Johnson,,bob@email,2024/01/17,245.00,electronics,UK
+4,Alice Williams,45,alice@email.com,01-18-2024,0,home,USA
+5,Charlie Brown,19,charlie@email.com,2024-01-19,,electronics,
+6,David Lee,150,david@email.com,2024-01-20,567.89,Electronics,USA
+7,Emma Davis,31,emma.email.com,2024-01-21,45.50,clothing,Canada
+8,Frank Miller,29,frank@email.com,2024-01-22,-50.00,electronics,USA
+9,,25,grace@email.com,2024-01-23,123.45,home,UK
+10,Henry Wilson,22,henry@email.com,invalid_date,89.00,CLOTHING,USA
+11,Irene Taylor,35,irene@email.com,2024-01-25,234.56,electronics,Australia
+12,Jack Anderson,0,jack@email.com,2024-01-26,178.90,home,USA

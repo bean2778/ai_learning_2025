@@ -328,7 +328,7 @@ def analyze_csv_file(filepath):
     except Exception as e:
         return {'error': f'Failed to process file: {str(e)}'} 
 
- def generate_report(analysis_results: Dict[str, Any]) -> str:
+def generate_report(analysis_results: Dict[str, Any]) -> str:
     """
     Generate a human-readable report from analysis results.
     
