@@ -198,19 +198,19 @@ def generate_categorical_analysis(df: pd.DataFrame,
 
 
 
-df = pd.read_csv('data/sales_data.csv')
-# result = generate_relationship_analysis(df)
+# df = pd.read_csv('data/sales_data.csv')
+# # result = generate_relationship_analysis(df)
 
-# print("Top 5 Correlations:")
-# for feat1, feat2, corr_val in result['top_correlations']:
-#     print(f"  {feat1} <-> {feat2}: {corr_val:.3f}")
+# # print("Top 5 Correlations:")
+# # for feat1, feat2, corr_val in result['top_correlations']:
+# #     print(f"  {feat1} <-> {feat2}: {corr_val:.3f}")
 
-# result['heatmap'].savefig('output/correlation_heatmap.png')
-# result['pairplot'].savefig('output/pairplot.png')
+# # result['heatmap'].savefig('output/correlation_heatmap.png')
+# # result['pairplot'].savefig('output/pairplot.png')
 
-result = generate_categorical_analysis(df, target_col='purchase_amount')
+# result = generate_categorical_analysis(df, target_col='purchase_amount')
 
-print("Warnings:", result['warnings'])
+# print("Warnings:", result['warnings'])
 
-result['count_plots'].savefig('output/categorical_counts.png')
-result['box_plots'].savefig('output/categorical_boxplots.png')
+# result['count_plots'].savefig('output/categorical_counts.png')
+# result['box_plots'].savefig('output/categorical_boxplots.png')
