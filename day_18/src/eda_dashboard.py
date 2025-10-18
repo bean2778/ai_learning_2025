@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from ydata_profiling import ProfileReport
 
 
-df = pd.read_csv('data/product_pricing.csv')
+df = pd.read_csv('data/monthly_electricity_production.csv')
 st.title("EDA Dashboard")
 
 tab1, tab2, tab3, tab4=  st.tabs(["Overview", "Distributions", "Relationships", "Auto Report"])

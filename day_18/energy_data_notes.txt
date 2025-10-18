@@ -1,0 +1,38 @@
+tab 1
+    181915 rows
+    previousYearToDate is missing 17105 rows (probably all the first year entries)
+    the columns value and share are numeric
+tab 2
+    the value distribution in horrible skewed to the left (I think we need logarthmic correction)
+    there is a long tail to the right after the initial spike in value but it's pretty continuous. I don't know if that counts as outliers
+    years covered are 2010 to 2022
+tab 3 
+    the products with the highest value are aggregate values (electricity supplied, Fossil fuels, Final consumptions).
+        the discreet vales that do the best are Hydro, Coal, Natural Gas, nuclear
+    there are no clear trends for value to year. Correlation is -0.24
+    Hydro and fossil fuels seem to be a pretty clear winner across all countries 
+tab 4 
+    mostly gives warnings about missing vals in previous year (about 10%, I think they're from the first year)
+        and zeros in share, which I think is fine b/c maybe that courtry doesn't use that thing
+
+Step 2 Questions
+    1) 2010 to 2022
+    2) 52 distinct countries
+    3) low carbon, fossil fuels, Other renweables, nuclear, other combustable,
+        not specified, total imports, and several others
+    4) wind is highest in Nov and Dec, honestly, it's hard to get that information out of the chart
+        b/c it's month and year combined so it's not easy to look at all Januaries together
+    5) it's a box graph for year to product but other renweables has it's box the farthest up so maybe 
+        that one. I don't think the tools are set up to know that very well. I think a scatter plot 
+        of product to year may have been good
+    6) I think the share column is everything
+
+Step 3
+    I think I like which countries show the best conditions for battery investment
+
+Next Steps Questions
+    1) The surprising thing about the data is how much I'm going to have to change my tooling to 
+        make it useful I think. I may be misreading it though
+    2) really none. 
+    3) Countries that are good for battery investment b/c I can check share of renewables in 
+        a country compared to the total
