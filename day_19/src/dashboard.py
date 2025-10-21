@@ -3,16 +3,20 @@ import pandas as pd
 import plotly.express as px
 import joblib
 import numpy as np
+import os
 
+# Get the directory where dashboard.py is located
+current_dir = os.path.dirname(os.path.abspath(__file__))
+# Go up one level to day_19/
+parent_dir = os.path.dirname(current_dir)
 
-# Load model artifacts
-model = joblib.load('storage_model.pkl')
-scaler = joblib.load('storage_scaler.pkl')
-feature_names = joblib.load('feature_names.pkl')
+model = joblib.load(os.path.join(parent_dir, 'storage_model.pkl'))
+scaler = joblib.load(os.path.join(parent_dir, 'storage_scaler.pkl'))
+feature_names = joblib.load(os.path.join(parent_dir, 'feature_names.pkl'))
 
 model = joblib.load( 'storage_model.pkl')
 st.title("Renewable Energy Storage Investment Model")
-candidates = pd.read_csv('data_storage_candidates.csv')
+candidates = pd.read_csv(os.path.join(parent_dir, 'data_storage_candidates.csv'))
 
 tab1, tab2, tab3, tab4 = st.tabs(["Overview", "Country Analysis", "Predictions", "Technical Details"])
 
@@ -124,7 +128,7 @@ with tab3:
     
     # Show comparison to countries
     st.write("**How does this compare to actual countries?**")
-    candidates = pd.read_csv('data_storage_candidates.csv')
+    # candidates = pd.read_csv('data_storage_candidates.csv')
     similar_countries = candidates.iloc[(candidates['storage_score'] - prediction).abs().argsort()[:3]]
     st.dataframe(similar_countries[['country', 'storage_score']])
 
