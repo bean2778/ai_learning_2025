@@ -14,7 +14,6 @@ model = joblib.load(os.path.join(parent_dir, 'storage_model.pkl'))
 scaler = joblib.load(os.path.join(parent_dir, 'storage_scaler.pkl'))
 feature_names = joblib.load(os.path.join(parent_dir, 'feature_names.pkl'))
 
-model = joblib.load( 'storage_model.pkl')
 st.title("Renewable Energy Storage Investment Model")
 candidates = pd.read_csv(os.path.join(parent_dir, 'data_storage_candidates.csv'))
 
